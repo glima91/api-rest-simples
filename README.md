@@ -17,4 +17,4 @@ $ node index.js
 $ cd ../Consumer
 $ node index.js
 ```
-A API REST funciona em http://localhost:8000 e o consumidor funciona no endereço http://localhost:8050. O usuário padrão é **admin** com senha **123546**.
+A API REST funciona em http://localhost:8000 e o consumidor funciona no endereço http://localhost:8050. O usuário padrão é **admin** com senha **123456**.
