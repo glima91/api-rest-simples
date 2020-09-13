@@ -3,19 +3,239 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gestão de Games!</title>
+    <title>Loja de Games</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
   </head>
+  <style>
+    body{
+      background-color: #eceff3;
+    }
+  </style>
   <body>
+
+    <div style="visibility: hidden;" class="notification is-primary" id="notification" onclick="hideNotification()">
+      <button class="delete"></button>
+      <strong id="mensagem">Cadastro realizado!</strong>
+    </div>
+
   <section class="section">
     <div class="container">
-      <h1 class="title">
-        <%= msg %>
-      </h1>
-      <p class="subtitle">
-        My first website with <strong>Bulma</strong>!
-      </p>
+      <div class="card">
+      <div class="card-content">
+        <p class="title">Lista de Games</p>
+        <br>
+        <table class="table is-fullwidth is-striped is-narrow is-hoverable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Ano</th>
+              <th>Preço (R$)</th>
+              <th>Opção</th>
+            </tr>
+            <tbody id="testBody"></tbody>
+          </thead>
+        </table>  
+
+        <br>
+        <div class="buttons">
+          <button onclick="listGames()" class="button is-primary">Atualizar</button>
+        </div>
+
+        <ul class="subtitle" id="games"></ul>
+      </div>
+    </div>
+    <br>
+    <div class="card">
+      <div class="card-content">
+        <p class="title">Novo game</p>
+          <div class="field">
+            <div class="control">
+              <input class="input is-info" type="text" placeholder="Título" name="title" id="title"><br><br>
+              <input class="input is-info" type="text" placeholder="Ano" name="year" id="year"><br><br>
+              <input class="input is-info" type="text" placeholder="Preço (R$)" name="price" id="price"><br><br>
+            </div>
+          </div>
+          <br>
+          <div class="buttons">
+            <button onclick="createGame()" class="button is-info">Cadastrar</button>
+          </div>
+      </div>
+    </div>
+    <br>
+    <div class="card">
+      <div class="card-content">
+        <p class="title">Editar game</p>
+          <div class="field">
+            <div class="control">
+              <input class="input is-info" type="text" placeholder="ID" name="idEdit" id="idEdit" readonly><br><br>
+              <input class="input is-info" type="text" placeholder="Título" name="titleEdit" id="titleEdit"><br><br>
+              <input class="input is-info" type="text" placeholder="Ano" name="yearEdit" id="yearEdit"><br><br>
+              <input class="input is-info" type="text" placeholder="Preço (R$)" name="priceEdit" id="priceEdit"><br><br>
+            </div>
+          </div>
+          <br>
+          <div class="buttons">
+            <button onclick="editGame()" class="button is-info">Editar</button>
+          </div>
+      </div>
+    </div>
     </div>
   </section>
+
   </body>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    // Configuração de autenticação na API
+    var token = '<%= token %>';
+    console.log(token);
+    var axiosConfig = {
+      headers: {
+          Authorization: "Bearer " + token
+      }
+    };
+
+
+    // Cadastra jogo
+    function createGame(){
+      var titleInput = document.getElementById("title");
+      var yearInput = document.getElementById("year");
+      var priceInput = document.getElementById("price");
+
+      var game = {
+        title: titleInput.value,
+        year: yearInput.value,
+        price: priceInput.value
+      }
+
+      axios.post("http://localhost:8000/game", game, axiosConfig).then(response =>{
+        var notification = document.getElementById("notification");
+        var mensagem = document.getElementById("mensagem");
+        mensagem.innerHTML = "Cadastrado com Sucesso!";
+        notification.style.visibility = 'visible';
+        listGames();
+      }).catch(error =>{
+        console.log("ERRO:", error);
+      });
+
+    }
+
+    // Deletar jogo
+    function deleteGame(id){
+     
+      if (confirm('Tem certeza que deseja deletar o registro?')) {
+        // Apaga registro
+        axios.delete("http://localhost:8000/game/" + id, axiosConfig).then(response =>{
+          listGames();
+        }).catch(error =>{
+          console.log("Erro ao deletar");
+        });
+      } else {
+        // Não apaga registro
+      }
+    }
+
+
+    // Editar jogo
+    function editGame(){
+      var idInput = document.getElementById("idEdit");
+      var titleInput = document.getElementById("titleEdit");
+      var yearInput = document.getElementById("yearEdit");
+      var priceInput = document.getElementById("priceEdit");
+
+      var game = {
+        title: titleInput.value,
+        year: yearInput.value,
+        price: priceInput.value
+      }
+
+      var id = idInput.value;
+
+      axios.put("http://localhost:8000/game/" + id, game, axiosConfig).then(response =>{
+        var notification = document.getElementById("notification");
+        var mensagem = document.getElementById("mensagem");
+        mensagem.innerHTML = "Atualizado com Sucesso!";
+        notification.style.visibility = 'visible';
+        listGames();
+      }).catch(error =>{
+        console.log("ERRO:", error);
+      });
+
+    }
+
+
+    // Preenche campos de edição
+    function loadForm(game){
+      console.log(game);
+      document.getElementById("idEdit").value = game.id;
+      document.getElementById("titleEdit").value = game.title;
+      document.getElementById("yearEdit").value = game.year;
+      document.getElementById("priceEdit").value = game.price;
+
+    }
+    
+    // oculta notificacao de sucesso
+    function hideNotification(){
+      var notification = document.getElementById("notification");
+      notification.style.visibility = 'hidden';
+    }
+
+    // gera lista de games
+    function listGames(){
+     
+      axios.get("http://localhost:8000/games", axiosConfig).then(response =>{
+        var games = response.data;
+       
+        const table = document.getElementById("testBody");
+        table.innerHTML = "";
+
+        games.forEach(game => {
+          
+          let row = table.insertRow();
+          let ID = row.insertCell(0);
+          ID.innerHTML = game.id;
+          let title = row.insertCell(1);
+          title.innerHTML = game.title;
+          let year = row.insertCell(2);
+          year.innerHTML = game.year;
+          let price = row.insertCell(3);
+          price.innerHTML = game.price;
+          
+
+          row.setAttribute("data-id",game.id);
+          row.setAttribute("data-nome",game.title);
+          row.setAttribute("data-year",game.year);
+          row.setAttribute("data-price",game.price);
+
+          let option = row.insertCell(4);
+          // cria botão de deletar e adiciona na tabela
+          var deleteBtn = document.createElement("button");
+          deleteBtn.innerHTML = "Deletar";
+          deleteBtn.addEventListener("click", function(){
+            deleteGame(game.id);  
+          });
+
+         
+          option.appendChild(deleteBtn);
+
+          // cria botão de editar e adiciona na tabela
+          var editBtn = document.createElement("button");
+          editBtn.innerHTML = "Editar";
+          editBtn.addEventListener("click", function(){
+            loadForm(game);  
+          });
+
+          
+          option.appendChild(editBtn);
+
+        });
+      }).catch(error =>{
+        alert(error);
+      });
+  }
+
+
+  listGames();
+  </script>
 </html>
+
